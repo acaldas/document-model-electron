@@ -7,6 +7,7 @@ import { BudgetStatement } from 'document-model-editors';
 import { useAtomValue } from 'jotai';
 import { useEffect } from 'react';
 import { themeAtom } from '../store';
+import { matrixAtom } from '../store/matrix';
 
 interface IProps {
     initialBudget?: BudgetStatementDocument;
@@ -15,6 +16,7 @@ interface IProps {
 
 export default function Editor({ initialBudget, onChange }: IProps) {
     const theme = useAtomValue(themeAtom);
+    const matrix = useAtomValue(matrixAtom);
 
     const [budgetStatement, dispatch, reset] =
         BudgetStatement.useBudgetStatementReducer(
@@ -24,6 +26,17 @@ export default function Editor({ initialBudget, onChange }: IProps) {
     useEffect(() => {
         reset(initialBudget ?? utils.createBudgetStatement());
     }, [initialBudget]);
+
+    useEffect(() => {
+        if (budgetStatement.operations.length) {
+            matrix.sendMessage(
+                '!ZQoJwnQyWnydtydKmt:matrix.org',
+                budgetStatement.operations[
+                    budgetStatement.operations.length - 1
+                ]
+            );
+        }
+    }, [budgetStatement.operations[budgetStatement.operations.length - 1]]);
 
     useEffect(() => {
         onChange?.(budgetStatement);

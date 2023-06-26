@@ -46,6 +46,7 @@ const electronApi = {
             ipcRenderer.off('removeTab', listener);
         };
     },
+    getMachineId: () => ipcRenderer.invoke('getMachineId'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronApi);

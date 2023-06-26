@@ -50,10 +50,13 @@
     },
     "dependencies": {
         "@acaldas/document-model-libs": "^1.0.15",
+        "@matrix-org/olm": "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.15.tgz",
         "@typescript-eslint/eslint-plugin": "^5.59.5",
         "document-model-editors": "^0.0.5",
         "electron-squirrel-startup": "^1.0.0",
         "jotai": "^2.1.0",
+        "matrix-js-sdk": "^26.1.0",
+        "node-machine-id": "^1.1.12",
         "react-router-dom": "^6.11.2",
         "react-stately": "^3.22.0"
     }

@@ -3,6 +3,7 @@ import {
     utils,
 } from '@acaldas/document-model-libs/budget-statement';
 import { BrowserWindow, Menu, app, dialog, ipcMain } from 'electron';
+import { machineId } from 'node-machine-id';
 import path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -57,6 +58,10 @@ async function handleFileSave(budgetStatement: BudgetStatementDocument) {
         app.addRecentDocument(savedPath);
     }
 }
+
+ipcMain.handle('getMachineId', () => {
+    return machineId();
+});
 
 ipcMain.handle('dialog:openFile', handleFileOpen);
 ipcMain.handle('dialog:saveFile', (e, args) => handleFileSave(args));
