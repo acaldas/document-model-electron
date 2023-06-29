@@ -9,8 +9,12 @@ import {
     autoUpdater,
     dialog,
     ipcMain,
+    shell,
 } from 'electron';
+import isDev from 'electron-is-dev';
 import path from 'path';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Deeplink } = require('electron-deeplink');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -67,6 +71,8 @@ async function handleFileSave(budgetStatement: BudgetStatementDocument) {
 
 ipcMain.handle('dialog:openFile', handleFileOpen);
 ipcMain.handle('dialog:saveFile', (e, args) => handleFileSave(args));
+
+ipcMain.handle('openURL', (e, url) => shell.openExternal(url));
 
 ipcMain.handle('showTabMenu', (event, tab) => {
     const template = [
@@ -262,7 +268,7 @@ const createWindow = async (options?: {
     });
 
     // Open the DevTools.
-    mainWindow.webContents.openDevTools({ mode: 'bottom' });
+    // mainWindow.webContents.openDevTools({ mode: 'bottom' });
     return mainWindow;
 };
 
@@ -276,16 +282,27 @@ app.on('open-file', (_event, path) => {
     }
 });
 
+const appProtocol = isDev ? 'dev-app' : 'prod-app';
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', () => {
-    createWindow({
+app.on('ready', async () => {
+    const window = await createWindow({
         onReady() {
             if (initFile) {
                 handleFile(initFile);
             }
         },
+    });
+
+    // TODO reset on mainwindow change
+    const deeplink = new Deeplink({
+        app,
+        mainWindow: window,
+        protocol: appProtocol,
+        isDev,
+        debugLogging: true,
     });
 
     setInterval(() => {
@@ -309,6 +326,20 @@ app.on('activate', () => {
         createWindow();
     }
 });
+
+app.on('open-url', (event, url) => {
+    const address = url.slice(`${appProtocol}://`.length);
+    user = address;
+    BrowserWindow.getAllWindows().forEach((window, index) => {
+        window.webContents.send('login', address);
+        if (index === 0) {
+            window.show();
+        }
+    });
+});
+
+let user: string;
+ipcMain.handle('user', () => user);
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
