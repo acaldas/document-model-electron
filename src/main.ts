@@ -2,26 +2,13 @@ import {
     BudgetStatementDocument,
     utils,
 } from '@acaldas/document-model-libs/budget-statement';
-import {
-    BrowserWindow,
-    Menu,
-    app,
-    autoUpdater,
-    dialog,
-    ipcMain,
-    shell,
-} from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, shell } from 'electron';
 import isDev from 'electron-is-dev';
 import path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Deeplink } = require('electron-deeplink');
-
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-    app.quit();
-}
+import { addDeeplink } from './app/deeplink';
 
 const isMac = process.platform === 'darwin';
+
 async function handleFile(file: string, window?: Electron.BrowserWindow) {
     try {
         const budget = await utils.loadBudgetStatementFromFile(file);
@@ -282,32 +269,17 @@ app.on('open-file', (_event, path) => {
     }
 });
 
-const appProtocol = isDev ? 'dev-app' : 'prod-app';
-
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-    const window = await createWindow({
+    createWindow({
         onReady() {
             if (initFile) {
                 handleFile(initFile);
             }
         },
     });
-
-    // TODO reset on mainwindow change
-    const deeplink = new Deeplink({
-        app,
-        mainWindow: window,
-        protocol: appProtocol,
-        isDev,
-        debugLogging: true,
-    });
-
-    setInterval(() => {
-        autoUpdater.checkForUpdates();
-    }, 60000);
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -327,43 +299,22 @@ app.on('activate', () => {
     }
 });
 
-app.on('open-url', (event, url) => {
+// keeps track of the logged in user
+let user: string;
+ipcMain.handle('user', () => user);
+
+const appProtocol = isDev ? 'connect-dev' : 'connect';
+addDeeplink(app, appProtocol, (event, url) => {
+    // gets user address from url
     const address = url.slice(`${appProtocol}://`.length);
     user = address;
+
+    // notifies all windows
     BrowserWindow.getAllWindows().forEach((window, index) => {
         window.webContents.send('login', address);
+        // shows first window if not in view
         if (index === 0) {
             window.show();
         }
     });
 });
-
-let user: string;
-ipcMain.handle('user', () => user);
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
-const server = 'https://varies-me-summit-bald.trycloudflare.com';
-const url = `${server}/update/${process.platform}/${app.getVersion()}`;
-console.log(url);
-
-autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-    const dialogOpts = {
-        type: 'info',
-        buttons: ['Restart', 'Later'],
-        title: 'Application Update',
-        message: process.platform === 'win32' ? releaseNotes : releaseName,
-        detail: 'A new version has been downloaded. Restart the application to apply the updates.',
-    };
-
-    dialog.showMessageBox(dialogOpts).then(returnValue => {
-        if (returnValue.response === 0) autoUpdater.quitAndInstall();
-    });
-});
-
-autoUpdater.on('error', message => {
-    console.error('There was a problem updating the application');
-    console.error(message);
-});
-
-autoUpdater.setFeedURL({ url });
