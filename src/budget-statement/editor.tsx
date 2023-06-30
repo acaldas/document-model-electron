@@ -30,7 +30,7 @@ export default function Editor({ initialBudget, onChange }: IProps) {
     useEffect(() => {
         if (budgetStatement.operations.length) {
             matrix.sendMessage(
-                '!ZQoJwnQyWnydtydKmt:matrix.org',
+                '!wmaUeVhnIgWlsJeCKz:matrix.org',
                 budgetStatement.operations[
                     budgetStatement.operations.length - 1
                 ]
