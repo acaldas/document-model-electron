@@ -302,7 +302,7 @@ class ElectronDocumentDrive implements IDocumentDrive {
     }
 
     async addDrive(input: AddDriveInput) {
-        await fs.mkdir(this.getPath(input.id));
+        await fs.mkdir(this.getPath(input.id), { recursive: true });
         this.document.addDrive(input);
         this.save();
     }
