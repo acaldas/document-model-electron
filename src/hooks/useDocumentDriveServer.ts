@@ -287,6 +287,27 @@ export function useDocumentDriveServer(
         return newDocument.document;
     }
 
+    async function addOperations(
+        driveId: string,
+        id: string,
+        operations: Operation[],
+    ) {
+        console.log('add operations', operations.map(o => o.type).join(','));
+        if (!server) {
+            throw new Error('Server is not defined');
+        }
+
+        const drive = documentDrives.find(
+            drive => drive.state.global.id === driveId,
+        );
+        if (!drive) {
+            throw new Error(`Drive with id ${driveId} not found`);
+        }
+
+        const newDocument = await server.addOperations(driveId, id, operations);
+        return newDocument.document;
+    }
+
     async function addDrive(drive: DriveInput) {
         const id = drive.global.id || utils.hashKey();
         drive = documentDriveUtils.createState(drive);
@@ -388,6 +409,7 @@ export function useDocumentDriveServer(
             renameNode,
             copyOrMoveNode,
             addOperation,
+            addOperations,
             getChildren,
             addDrive,
             addRemoteDrive,
